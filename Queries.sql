@@ -91,3 +91,767 @@ ORDER BY i.QuantityAvailable;
 SELECT * 
 FROM Products
 WHERE Name LIKE '%1%';
+
+-- 11: Prepare a list of offices sorted by country, state, city.
+SELECT *
+FROM offices
+ORDER BY country,
+         state,
+         city;
+
+---
+-- 12: List the products in each product line.
+SELECT PRODUCTNAME,
+       PRODUCTLINE
+FROM products
+ORDER BY productline;
+
+---
+-- 13: Report the account representative for each customer.
+SELECT c.CUSTOMERNAME,
+       e.FIRSTNAME || ' ' || e.LASTNAME AS EMPLOYEENAME
+FROM customers c
+LEFT JOIN employees e ON 
+c.SALESREPEMPLOYEENUMBER = e.employeenumber;
+
+---
+-- 14: List products sold by order date.
+SELECT p.PRODUCTNAME,
+       o.ORDERDATE
+FROM ORDERS o
+JOIN ORDERDETAILS od ON o.ORDERNUMBER = od.ORDERNUMBER
+JOIN PRODUCTS p ON p.PRODUCTCODE = od.PRODUCTCODE
+ORDER BY o.ORDERDATE;
+
+---
+-- 15:  List the product lines that contain 'Cars'.
+SELECT PRODUCTLINE
+FROM PRODUCTLINES
+WHERE PRODUCTLINE LIKE '%Cars';
+
+---
+-- 16: Report those payments greater than $100,000.
+SELECT *
+FROM PAYMENTS
+WHERE AMOUNT > 100000;
+
+---
+-- 17:  What are the names of executives with VP or Manager in their title? Use the CONCAT function to combine the employee's first name and last name into a single field for reporting.
+SELECT FIRSTNAME || ' ' || LASTNAME AS FULLNAME
+FROM EMPLOYEES
+WHERE JOBTITLE LIKE 'VP%'
+OR    JOBTITLE LIKE '%Manager%';
+
+---
+-- 18: Report the name and city of customers who don't have sales representatives?
+SELECT CUSTOMERNAME,
+       CITY
+FROM CUSTOMERS
+WHERE SALESREPEMPLOYEENUMBER IS NULL;
+
+---
+-- 19: Report the products that have not been sold.
+WITH cte AS
+(
+  SELECT od.productcode
+  FROM products p
+    LEFT JOIN orderdetails od ON p.productcode = od.productcode
+    LEFT JOIN orders o ON o.ordernumber = od.ordernumber
+  WHERE LOWER(o.status) <> 'disputed'
+  GROUP BY od.productcode
+)
+SELECT p.productcode,
+       p.productname
+FROM products p
+  LEFT JOIN cte c ON c.productcode = p.productcode
+WHERE c.productcode IS NULL;
+
+---
+-- 20: Who are the employees in Boston?
+SELECT EMPLOYEENUMBER
+FROM EMPLOYEES e
+  JOIN OFFICES o ON e.OFFICECODE = o.OFFICECODE
+WHERE o.CITY = 'Boston';
+
+---
+-- Q11: 7-8. Report those payments greater than $100,000. Sort the report so the customer who made the highest payment appears first.
+SELECT P.*
+FROM CUSTOMERS c
+  JOIN PAYMENTS p ON c.CUSTOMERNUMBER = p.CUSTOMERNUMBER
+WHERE p.AMOUNT > 100000
+ORDER BY p.AMOUNT DESC;
+
+---
+-- Q12: 8-2. List the order dates in descending order for orders for the 1940 Ford Pickup Truck.
+SELECT o.ORDERDATE
+FROM PRODUCTS p
+  JOIN ORDERDETAILS od ON p.PRODUCTCODE = od.PRODUCTCODE
+  JOIN ORDERS o ON o.ORDERNUMBER = od.ORDERNUMBER
+WHERE p.PRODUCTNAME = '1940 Ford Pickup Truck'
+ORDER BY o.ORDERDATE DESC;
+
+---
+-- Q13: 9-5. List the names of products sold at less than 80% of the MSRP.
+SELECT p.PRODUCTNAME
+FROM PRODUCTS p
+JOIN ORDERDETAILS od ON p.PRODUCTCODE = od.PRODUCTCODE
+WHERE 0.8*p.MSRP > od.PRICEEACH;
+
+---
+-- Q14: 10-6. Reports those products that have been sold with a markup of 100% or more (i.e., the priceEach is at least twice the buyPrice) 
+SELECT DISTINCT p.productcode
+FROM products p
+JOIN orderdetails od ON p.productcode = od.productcode
+WHERE od.priceEach >= 2*p.buyprice;
+
+---
+-- Q15: 11-1. Find products containing the name 'Ford'.
+SELECT PRODUCTCODE,PRODUCTNAME
+FROM products
+WHERE PRODUCTNAME LIKE '%Ford%';
+
+---
+-- Q16: 12-2. List products ending in 'ship'.
+SELECT productcode
+FROM products
+WHERE LOWER(PRODUCTNAME) LIKE '%ship';
+
+---
+-- Q17: 13-4. What are the products with a product code in the range S700_1000 to S700_1499?
+SELECT productcode
+FROM PRODUCTS
+WHERE PRODUCTCODE BETWEEN 'S700_1000' AND 'S700_1499';
+
+---
+-- Q18: 14-5. Which customers have a digit in their name?
+SELECT CUSTOMERNUMBER
+FROM customers
+WHERE REGEXP_LIKE (customername,'[0-9]');
+
+---
+-- Q19: 15-6. List the names of employees called Dianne or Diane.
+SELECT FIRSTNAME || ' ' || LASTNAME AS EMPLOYEEFULLNAME
+FROM EMPLOYEES
+WHERE lower(FIRSTNAME) = 'dianne'
+OR    lower(FIRSTNAME) = 'diane'
+OR    lower(LASTNAME) = 'dianne'
+OR    lower(LASTNAME) = 'diane';
+
+---
+-- Q20: 16-7. List the products containing ship or boat in their product name.
+SELECT productcode
+FROM PRODUCTS
+WHERE PRODUCTNAME LIKE '%Ship%'
+OR    PRODUCTNAME LIKE '%ship%'
+OR    PRODUCTNAME LIKE '%boat%'
+OR    PRODUCTNAME LIKE '%Boat%';
+
+---
+-- Q21: 17-8. List the products with a product code beginning with S700.
+SELECT productcode
+FROM PRODUCTS
+WHERE PRODUCTCODE LIKE 'S700%';
+
+---
+-- Q22: 18-9. List the names of employees called Larry or Barry.
+SELECT firstname || ' ' || lastname AS empname
+FROM employees
+WHERE lower(FIRSTNAME) LIKE '%larry%'
+OR    lower(FIRSTNAME) LIKE '%barry%'
+OR    lower(LASTNAME) LIKE '%larry%'
+OR    lower(LASTNAME) LIKE '%barry%';
+
+---
+-- Q23: 19-10. List the names of employees with non-alphabetic characters in their names.
+SELECT FIRSTNAME || ' ' || LASTNAME AS FULLNAME
+FROM EMPLOYEES
+WHERE NOT REGEXP_LIKE (FIRSTNAME,'^[A-Za-z]+$')
+OR    NOT REGEXP_LIKE (LASTNAME,'^[A-Za-z]+$');
+
+---
+-- Q24: 20-11. List the vendors whose name ends in Diecast
+SELECT PRODUCTVENDOR
+FROM PRODUCTS
+WHERE PRODUCTVENDOR LIKE '%Diecast';
+
+---
+-- Q25: 21-1. Who is at the top of the organization (i.e., reports to no one).
+SELECT firstname || ' ' || lastname AS fullname
+FROM employees
+WHERE reportsto IS NULL;
+
+---
+-- Q26: 22-2. Who reports to William Patterson?
+WITH cte AS
+(
+  SELECT employeenumber
+  FROM employees
+  WHERE firstname || ' ' || lastname = 'William Patterson'
+)
+SELECT e.employeenumber
+FROM employees e
+JOIN cte ON reportsTo = cte.employeenumber;
+
+---
+-- Q27: 23-3. List all the products purchased by Herkku Gifts.
+SELECT p.productname
+FROM products p
+JOIN orderdetails od ON od.productcode = p.productcode
+JOIN orders o ON o.ordernumber = od.ordernumber
+JOIN customers c ON c.customernumber = o.customernumber
+WHERE c.customername = 'Herkku Gifts';
+
+---
+-- Q28: 24-9. List the employees who report to those employees who report to Diane Murphy.
+SELECT e1.employeenumber
+FROM employees e1
+JOIN employees e2 ON e1.reportsto = e2.employeenumber
+JOIN employees e3 ON e2.reportsto = e3.employeenumber
+WHERE e3.firstname || ' ' || e3.lastname = 'Diane Murphy';
+
+---
+-- Q29: 25-27. Find the products sold in May 2003 but not May 2004.
+WITH reqtable
+AS
+(SELECT o.ordernumber,
+       o.orderdate,
+       od.productcode
+FROM orders o
+JOIN orderdetails od ON o.ordernumber = od.ordernumber
+WHERE (EXTRACT(year FROM o.orderdate) = 2003 OR EXTRACT(year FROM o.orderdate) = 2004)
+AND   (EXTRACT(month FROM o.orderdate) = 5)),
+t2003 AS (SELECT productcode FROM reqtable ra WHERE EXTRACT(YEAR FROM ra.orderdate) = 2003),
+T2004 AS (SELECT productcode FROM reqtable ra WHERE EXTRACT(YEAR FROM ra.orderdate) = 2004)
+SELECT t2003.PRODUCTCODE FROM t2003
+LEFT JOIN t2004 ON t2003.PRODUCTCODE = t2004.PRODUCTCODE
+WHERE T2004.PRODUCTCODE IS NULL;
+
+---
+-- Q30: 26-28. Find the customers without payments in 2003.
+SELECT DISTINCT c.customernumber
+FROM customers c
+LEFT JOIN payments p ON c.customernumber = p.customernumber AND EXTRACT(year FROM p.paymentdate) = 2003
+WHERE p.paymentdate IS NULL;
+
+---
+-- Q31: 27-1. Who reports to Mary Patterson?
+WITH empcte AS
+(
+  SELECT EMPLOYEENUMBER
+  FROM employees
+  WHERE firstname || ' ' || lastname = 'Mary Patterson'
+)
+SELECT E.employeenumber
+FROM employees e
+JOIN empcte ON empcte.employeenumber = e.REPORTSTO;
+
+---
+-- Q32: 1-2. How many employees are there in the company?
+SELECT COUNT(employeenumber) AS NUMBEROFEMPLOYEES
+FROM employees;
+
+---
+-- Q33: 2-3. What is the total of payments received?
+SELECT SUM(AMOUNT) AS TOTALPAYMENTS
+FROM PAYMENTS;
+
+---
+-- Q34: 3-5. Report total payments for October 28, 2004.
+SELECT SUM(AMOUNT) AS PAYMENTSONOCT282004
+FROM PAYMENTS
+WHERE PAYMENTDATE = TO_DATE('28-10-2004','DD-MM-YYYY');
+
+---
+-- Q35: 4-8. How many products in each product line?
+SELECT pl.productline,
+       COUNT(*) AS noofproducts
+FROM productlines pl
+JOIN products p ON pl.productline = p.productline
+GROUP BY pl.productline;
+
+---
+-- Q36: 5-9. What is the minimum payment received?
+SELECT MIN(amount) AS minpaymentreceived
+FROM payments;
+
+---
+-- Q37: 6-11. What is the average percentage markup of the MSRP on buyPrice?
+SELECT AVG(((msrp - buyprice)*100) / buyprice) AS AVGPERCENTAGE
+FROM products;
+
+---
+-- Q38: 7-12. How many distinct products does ClassicModels sell?
+SELECT COUNT(DISTINCT (productcode)) AS noofproducts
+FROM products;
+
+---
+-- Q39: 8-2. Report total payments for Atelier graphique.
+SELECT SUM(p.amount) AS paymentsofateliergraphique
+FROM payments p
+JOIN customers c ON p.customernumber = c.customernumber
+WHERE c.customername = 'Atelier graphique';
+
+---
+-- Q40: 9-6. How many orders have been placed by Herkku Gifts?
+SELECT COUNT(*) AS noofordersbyherkku
+FROM orders o
+JOIN customers c ON o.customernumber = c.customernumber
+WHERE c.customername = 'Herkku Gifts';
+
+---
+-- Q41: 10-9. List the value of 'On Hold' orders.
+SELECT SUM(od.quantityordered*od.priceeach) AS onholdvalue
+FROM orders o
+JOIN orderdetails od ON o.ordernumber = od.ordernumber
+WHERE O.status = 'On Hold';
+
+---
+-- Q42: 11-8. What is the quantity on hand for products listed on 'On Hold' orders?
+SELECT P.PRODUCTCODE, SUM(P.QUANTITYINSTOCK) AS QUANTITYONHAND
+FROM PRODUCTS P
+JOIN ORDERDETAILS OD ON P.PRODUCTCODE = OD.PRODUCTCODE
+JOIN ORDERS O ON od.ordernumber = o.ordernumber
+WHERE o.status = 'On Hold'
+GROUP BY P.PRODUCTCODE;
+
+---
+-- Q43: 12-3. Report the number of customers in Denmark, Norway, and Sweden.
+SELECT COUNTRY,COUNT(*) AS NOOFCUSTOMERS
+FROM CUSTOMERS
+WHERE COUNTRY IN ('Denmark','Norway', 'Sweden')
+GROUP BY COUNTRY;
+
+---
+-- Q44: 13-5. What is the difference in days between the most recent and oldest order date in the Orders file?
+SELECT MAX(TRUNC(ORDERDATE)) - MIN(TRUNC(ORDERDATE)) AS DIFFERENCEINDAYS
+FROM ORDERS;
+
+---
+-- Q45: 14-7. What is the value of orders shipped in August 2004?
+SELECT SUM(OD.QUANTITYORDERED*OD.PRICEEACH) AS VALUESHIPPEDINAUG2004
+FROM ORDERS O
+JOIN ORDERDETAILS OD ON O.ORDERNUMBER = OD.ORDERNUMBER
+WHERE O.STATUS = 'Shipped'
+AND   EXTRACT(YEAR FROM O.ORDERDATE) = 2004
+AND   EXTRACT(MONTH FROM O.ORDERDATE) = 8;
+
+---
+-- Q46: 1-15. Which orders have a value greater than $5,000?
+SELECT OD.ORDERNUMBER
+FROM ORDERS O
+JOIN ORDERDETAILS OD ON O.ORDERNUMBER = OD.ORDERNUMBER
+GROUP BY OD.ORDERNUMBER
+HAVING SUM(OD.QUANTITYORDERED*OD.PRICEEACH) > 5000;
+
+---
+-- Q47: 2-3. Report the total payments by date
+SELECT TRUNC(PAYMENTDATE) AS PAYMENTDATE,
+       SUM(AMOUNT) AS PAYMENTS
+FROM PAYMENTS
+GROUP BY TRUNC(PAYMENTDATE);
+
+---
+-- Q48: 3-5. List the amount paid by each customer.
+SELECT C.CUSTOMERNUMBER,
+       CASE
+         WHEN SUM(P.AMOUNT) > 0 THEN SUM(P.AMOUNT)
+         ELSE 0
+       END AS AMOUNTPAIDBYCUSTOMER
+FROM PAYMENTS P
+RIGHT JOIN CUSTOMERS C ON P.CUSTOMERNUMBER = C.CUSTOMERNUMBER
+GROUP BY C.CUSTOMERNUMBER;
+
+---
+-- 59: Report the number of orders 'On Hold' for each customer.
+SELECT C.CUSTOMERNUMBER,
+       COUNT(O.ORDERNUMBER) AS ONHOLDFOREACHCUSTOMER
+FROM CUSTOMERS C
+LEFT JOIN ORDERS O ON O.CUSTOMERNUMBER = C.CUSTOMERNUMBER
+AND O.STATUS = 'On Hold'
+GROUP BY C.CUSTOMERNUMBER
+ORDER BY C.CUSTOMERNUMBER;
+
+---
+-- 60: List the names of customers and their corresponding order number where a particular order from that customer has a value greater than $25,000?
+WITH ORDERMORETHAN25000
+AS
+(SELECT O.ORDERNUMBER,
+       O.CUSTOMERNUMBER
+FROM ORDERS O
+JOIN ORDERDETAILS OD ON O.ORDERNUMBER = OD.ORDERNUMBER
+GROUP BY O.ORDERNUMBER,
+         O.CUSTOMERNUMBER
+HAVING SUM(OD.QUANTITYORDERED*OD.PRICEEACH) > 25000) 
+SELECT C.CUSTOMERNAME,OM.ORDERNUMBER
+FROM CUSTOMERS C
+JOIN ORDERMORETHAN25000 OM ON C.CUSTOMERNUMBER = OM.CUSTOMERNUMBER;
+
+---
+-- 61: Compute the commission for each sales representative, assuming the commission is 5% of the value of an order. Sort by employee last name and first name.
+WITH EMPTOCUST
+AS
+(SELECT E.*,
+       C.CUSTOMERNAME,
+       C.CUSTOMERNUMBER
+FROM EMPLOYEES E
+LEFT JOIN CUSTOMERS C ON E.EMPLOYEENUMBER = C.SALESREPEMPLOYEENUMBER),
+EACHORDERVALUEBYCUST AS
+(SELECT OD.ORDERNUMBER,
+       O.CUSTOMERNUMBER,
+       SUM(OD.PRICEEACH*OD.QUANTITYORDERED) AS ORDERTOT
+FROM ORDERS O
+JOIN ORDERDETAILS OD ON O.ORDERNUMBER = OD.ORDERNUMBER
+GROUP BY OD.ORDERNUMBER,
+         O.CUSTOMERNUMBER)
+SELECT ET.FIRSTNAME, ET.LASTNAME, ET.EMPLOYEENUMBER,
+       CASE
+         WHEN SUM(EOC.ORDERTOT) >= 0 THEN 0.05*SUM(EOC.ORDERTOT)
+         ELSE 0
+       END AS REVENUEBYEACHEMP
+FROM EMPTOCUST ET
+LEFT JOIN EACHORDERVALUEBYCUST EOC ON ET.CUSTOMERNUMBER = EOC.CUSTOMERNUMBER
+GROUP BY ET.FIRSTNAME, ET.LASTNAME, ET.EMPLOYEENUMBER
+ORDER BY ET.LASTNAME, ET.FIRSTNAME;
+
+---
+-- 62: Compute the average time between order date and ship date for each customer ordered by the largest difference.
+SELECT O.CUSTOMERNUMBER,
+       AVG(O.SHIPPEDDATE - O.ORDERDATE) AS AVG_diff_in_days
+FROM ORDERS O
+GROUP BY O.CUSTOMERNUMBER
+ORDER BY AVG_DIFF_IN_DAYS DESC;
+
+---
+-- 63: Compute the revenue generated by each sales representative based on the orders from the customers they serve.
+WITH EMPTOCUST
+AS
+(SELECT E.*,
+       C.CUSTOMERNAME,
+       C.CUSTOMERNUMBER
+FROM EMPLOYEES E
+LEFT JOIN CUSTOMERS C ON E.EMPLOYEENUMBER = C.SALESREPEMPLOYEENUMBER),
+EACHORDERVALUEBYCUST AS
+(SELECT OD.ORDERNUMBER,
+       O.CUSTOMERNUMBER,
+       SUM(OD.PRICEEACH*OD.QUANTITYORDERED) AS ORDERTOT
+FROM ORDERS O
+JOIN ORDERDETAILS OD ON O.ORDERNUMBER = OD.ORDERNUMBER
+GROUP BY OD.ORDERNUMBER,
+         O.CUSTOMERNUMBER)
+SELECT ET.EMPLOYEENUMBER,
+       CASE
+         WHEN SUM(EOC.ORDERTOT) >= 0 THEN SUM(EOC.ORDERTOT)
+         ELSE 0
+       END AS REVENUEBYEACHEMP
+FROM EMPTOCUST ET
+LEFT JOIN EACHORDERVALUEBYCUST EOC ON ET.CUSTOMERNUMBER = EOC.CUSTOMERNUMBER
+GROUP BY ET.EMPLOYEENUMBER;
+
+---
+-- 64: Compute the profit generated by each sales representative based on the orders from the customers they serve. Sort by profit generated descending.
+WITH CUSTOMERPROFITS AS
+(
+  SELECT O.CUSTOMERNUMBER,
+         SUM(OD.QUANTITYORDERED*(OD.PRICEEACH - P.BUYPRICE)) AS PROFIT
+  FROM orders o
+    JOIN orderdetails od ON o.ordernumber = od.ordernumber
+    JOIN PRODUCTS P ON P.PRODUCTCODE = OD.PRODUCTCODE
+  GROUP BY O.CUSTOMERNUMBER
+),
+emptocust AS
+(
+  SELECT e.employeenumber,
+         c.customernumber
+  FROM employees e
+    LEFT JOIN customers c ON e.employeenumber = c.salesrepemployeenumber
+)
+SELECT employeenumber,
+       CASE
+         WHEN SUM(PROFIT) > 0 THEN SUM(PROFIT)
+         ELSE 0
+       END AS PROFIT
+FROM emptocust ec
+  LEFT JOIN CUSTOMERPROFITS cp ON ec.customernumber = cp.customernumber
+GROUP BY employeenumber
+ORDER BY PROFIT DESC;
+
+---
+-- 65: Compute the revenue generated by each product, sorted by product name.
+SELECT P.PRODUCTCODE,
+       P.PRODUCTNAME,
+       CASE
+         WHEN SUM(OD.QUANTITYORDERED*OD.PRICEEACH) > 0 THEN SUM(OD.QUANTITYORDERED*OD.PRICEEACH)
+         ELSE 0
+       END AS REVENUE
+FROM PRODUCTS P
+LEFT JOIN ORDERDETAILS OD ON P.PRODUCTCODE = OD.PRODUCTCODE
+GROUP BY P.PRODUCTCODE,
+         P.PRODUCTNAME
+ORDER BY P.PRODUCTNAME;
+
+---
+-- 66: Compute the profit generated by each product line, sorted by profit descending.
+SELECT P.PRODUCTLINE,
+       CASE
+         WHEN SUM(OD.QUANTITYORDERED*(OD.PRICEEACH-P.BUYPRICE)) > 0 THEN SUM(OD.QUANTITYORDERED*(OD.PRICEEACH-P.BUYPRICE))
+         ELSE 0
+       END AS PROFIT
+FROM PRODUCTS P
+LEFT JOIN ORDERDETAILS OD ON P.PRODUCTCODE = OD.PRODUCTCODE
+GROUP BY P.PRODUCTLINE
+ORDER BY PROFIT DESC;
+
+---
+-- 67: Compute the total value ordered, total amount paid, and their difference for each customer for orders placed in 2004 and payments received in 2004 (Hint; Create views for the total paid and total ordered).
+WITH ORDERSONMAY
+AS
+(SELECT O.CUSTOMERNUMBER,
+       CASE
+         WHEN SUM(OD.quantityordered*OD.PRICEEACH) > 0 THEN SUM(OD.quantityordered*OD.PRICEEACH)
+         ELSE 0
+       END AS ORDERSAMOUNT
+FROM ORDERS O
+LEFT JOIN orderdetails od ON od.ordernumber = o.ordernumber
+WHERE EXTRACT(YEAR FROM O.ORDERDATE) = 2004
+AND   EXTRACT(MONTH FROM O.ORDERDATE) = 5
+GROUP BY O.CUSTOMERNUMBER),
+PAYMENTSONMAY AS
+(SELECT P.CUSTOMERNUMBER,
+        CASE
+          WHEN SUM(P.AMOUNT) > 0 THEN SUM(P.AMOUNT)
+          ELSE 0
+        END AS PAIDAMOUNT
+FROM PAYMENTS P
+WHERE EXTRACT(YEAR FROM P.PAYMENTDATE) = 2004
+AND   EXTRACT(MONTH FROM P.PAYMENTDATE) = 5
+GROUP BY P.CUSTOMERNUMBER)
+SELECT C.CUSTOMERNUMBER,
+       CASE
+         WHEN OM.ORDERSAMOUNT > 0 THEN OM.ORDERSAMOUNT
+         ELSE 0
+       END AS ORDERSAMOUNT,
+       CASE
+         WHEN PM.PAIDAMOUNT > 0 THEN PM.PAIDAMOUNT
+         ELSE 0
+       END AS PAIDAMOUNT,
+       CASE
+         WHEN PM.PAIDAMOUNT IS NULL AND OM.ORDERSAMOUNT IS NULL THEN 0
+         WHEN PM.PAIDAMOUNT IS NULL THEN -OM.ORDERSAMOUNT
+         WHEN OM.ORDERSAMOUNT IS NULL THEN PM.PAIDAMOUNT
+         ELSE PM.PAIDAMOUNT - OM.ORDERSAMOUNT
+       END AS DIFFERENCE
+FROM CUSTOMERS C
+LEFT JOIN ORDERSONMAY OM ON C.CUSTOMERNUMBER = OM.CUSTOMERNUMBER
+LEFT JOIN PAYMENTSONMAY PM ON PM.CUSTOMERNUMBER = C.CUSTOMERNUMBER;
+
+---
+-- 68: What is the ratio of the value of payments made to orders received for each month of 2004.
+WITH MONTHPAYMENTS AS
+(
+SELECT EXTRACT(MONTH FROM PAYMENTDATE) AS MONTH, SUM(AMOUNT) AS PAIDAMOUNT
+FROM PAYMENTS
+WHERE EXTRACT(YEAR FROM PAYMENTDATE) = 2004
+GROUP BY EXTRACT(MONTH FROM PAYMENTDATE)),
+MONTHORDERS AS
+(
+SELECT EXTRACT(MONTH FROM O.ORDERDATE) AS MONTH, SUM(OD.QUANTITYORDERED*OD.PRICEEACH) AS ORDEREDAMOUNT
+FROM ORDERDETAILS OD
+JOIN ORDERS O ON O.ORDERNUMBER = OD.ORDERNUMBER
+WHERE EXTRACT(YEAR FROM O.ORDERDATE) = 2004
+GROUP BY EXTRACT(MONTH FROM O.ORDERDATE))
+SELECT MP.MONTH, MP.PAIDAMOUNT, MO.ORDEREDAMOUNT, MP.PAIDAMOUNT/MO.ORDEREDAMOUNT AS RATIO
+FROM MONTHPAYMENTS MP
+JOIN MONTHORDERS MO ON MP.MONTH = MO.MONTH;
+
+---
+-- 69: What is the difference in the amount received for each month of 2004 compared to 2003?
+WITH T2003
+AS
+(SELECT EXTRACT(MONTH FROM PAYMENTDATE) AS MONTH,
+       SUM(AMOUNT) AS PAYIN2003
+FROM PAYMENTS
+WHERE EXTRACT(YEAR FROM PAYMENTDATE) = 2003
+GROUP BY EXTRACT(MONTH FROM PAYMENTDATE)),
+T2004 AS
+(SELECT EXTRACT(MONTH FROM PAYMENTDATE) AS MONTH,
+       SUM(AMOUNT) AS PAYIN2004
+FROM PAYMENTS
+WHERE EXTRACT(YEAR FROM PAYMENTDATE) = 2004
+GROUP BY EXTRACT(MONTH FROM PAYMENTDATE))
+SELECT T2.MONTH,
+       PAYIN2004 - PAYIN2003
+FROM T2003 T1
+JOIN T2004 T2 ON T1.MONTH = T2.MONTH;
+
+---
+-- 70: Compute the ratio for each product of sales for 2003 versus 2004.
+WITH T2003
+AS
+(SELECT P.PRODUCTCODE,
+       P.PRODUCTNAME,
+       SUM(OD.QUANTITYORDERED) AS QUANTITYORDERED2003
+FROM PRODUCTS P
+JOIN ORDERDETAILS OD ON OD.PRODUCTCODE = P.PRODUCTCODE
+JOIN ORDERS O ON O.ORDERNUMBER = OD.ORDERNUMBER
+WHERE EXTRACT(YEAR FROM O.ORDERDATE) = 2003
+GROUP BY P.PRODUCTCODE,
+         P.PRODUCTNAME),
+T2004 AS
+(SELECT P.PRODUCTCODE,
+       P.PRODUCTNAME,
+       SUM(OD.QUANTITYORDERED) AS QUANTITYORDERED2004
+FROM PRODUCTS P
+JOIN ORDERDETAILS OD ON OD.PRODUCTCODE = P.PRODUCTCODE
+JOIN ORDERS O ON O.ORDERNUMBER = OD.ORDERNUMBER
+WHERE EXTRACT(YEAR FROM O.ORDERDATE) = 2004
+GROUP BY P.PRODUCTCODE,
+         P.PRODUCTNAME)
+SELECT T1.PRODUCTCODE, T1.PRODUCTNAME, T1.QUANTITYORDERED2003 / T2.QUANTITYORDERED2004 AS RATIO
+FROM T2003 T1
+FULL OUTER JOIN T2004 T2 ON T1.PRODUCTCODE = T2.PRODUCTCODE;
+
+---
+-- 71: Compute the ratio of payments for each customer for 2003 versus 2004.
+WITH T2003
+AS
+(SELECT C.CUSTOMERNUMBER,
+       SUM(AMOUNT) AS PAID_03
+FROM PAYMENTS P
+JOIN CUSTOMERS C ON P.CUSTOMERNUMBER = C.CUSTOMERNUMBER
+WHERE EXTRACT(YEAR FROM P.PAYMENTDATE) = 2003
+GROUP BY C.CUSTOMERNUMBER),
+T2004 AS
+(SELECT C.CUSTOMERNUMBER,
+       SUM(AMOUNT) AS PAID_04
+FROM PAYMENTS P
+JOIN CUSTOMERS C ON P.CUSTOMERNUMBER = C.CUSTOMERNUMBER
+WHERE EXTRACT(YEAR FROM P.PAYMENTDATE) = 2004
+GROUP BY C.CUSTOMERNUMBER)
+SELECT T2003.CUSTOMERNUMBER,
+       PAID_03 / PAID_04 AS RATIO
+FROM T2003
+JOIN T2004 ON T2003.CUSTOMERNUMBER = T2004.CUSTOMERNUMBER;
+
+---
+-- 72: List all payments greater than twice the average payment.
+WITH AVER AS
+(
+  SELECT AVG(AMOUNT) AS AVERAGE FROM PAYMENTS
+)
+SELECT P.*
+FROM PAYMENTS P,
+     AVER
+WHERE P.AMOUNT > 2*AVER.AVERAGE;
+
+---
+-- 73: What is the percentage value of each product in inventory sorted by the highest percentage first
+WITH MAXI
+AS
+(SELECT SUM(QUANTITYINSTOCK*BUYPRICE) AS TOTALSTOCK
+FROM PRODUCTS)
+SELECT P.PRODUCTCODE,P.PRODUCTNAME,QUANTITYINSTOCK*BUYPRICE*100.00 / M.TOTALSTOCK AS PERCENTAGE
+FROM PRODUCTS P
+CROSS JOIN MAXI M
+ORDER BY PERCENTAGE DESC;
+
+---
+-- 74: Compute the revenue generated by each customer based on their orders. Also, show each customer's revenue as a percentage of total revenue. Sort by customer name.
+WITH TOTREV
+AS
+(SELECT SUM(QUANTITYORDERED*PRICEEACH) AS TOTALREVENUE
+FROM ORDERDETAILS)
+SELECT C.CUSTOMERNUMBER,C.CUSTOMERNAME,COALESCE((SUM(OD.PRICEEACH*OD.QUANTITYORDERED)*100 / T.TOTALREVENUE),0) AS REVENUEPERCENTAGE
+FROM CUSTOMERS C
+LEFT JOIN ORDERS O ON C.CUSTOMERNUMBER = O.CUSTOMERNUMBER
+LEFT JOIN ORDERDETAILS OD ON O.ORDERNUMBER = OD.ORDERNUMBER
+CROSS JOIN TOTREV T
+GROUP BY C.CUSTOMERNUMBER,
+         C.CUSTOMERNAME,
+         T.TOTALREVENUE
+ORDER BY C.CUSTOMERNAME;
+
+---
+-- 75: Compute the profit generated by each customer based on their orders. Also, show each customer's profit as a percentage of total profit. Sort by profit descending.
+WITH TOTPROFITTABLE
+AS
+(SELECT SUM(OD.QUANTITYORDERED*(OD.PRICEEACH - P.BUYPRICE)) AS TOTALPROFIT
+FROM ORDERDETAILS OD
+JOIN PRODUCTS P ON P.PRODUCTCODE = OD.PRODUCTCODE),
+PROFITPERPRODCUTPERORDERNUMBERTABLE AS
+(SELECT P.PRODUCTCODE,
+       P.PRODUCTNAME,
+       OD.ORDERNUMBER,
+       SUM(OD.QUANTITYORDERED*(OD.PRICEEACH - P.BUYPRICE)) AS PROFITPERPRODCUTPERORDERNUMBER
+FROM ORDERDETAILS OD
+JOIN PRODUCTS P ON OD.PRODUCTCODE = P.PRODUCTCODE
+GROUP BY P.PRODUCTCODE,
+         P.PRODUCTNAME,
+         OD.ORDERNUMBER)
+SELECT O.CUSTOMERNUMBER,
+       ROUND(SUM(A.PROFITPERPRODCUTPERORDERNUMBER)*100.0 / T.TOTALPROFIT,2) AS PROFITPERCUSTOMER
+FROM ORDERS O
+JOIN PROFITPERPRODCUTPERORDERNUMBERTABLE A ON A.ORDERNUMBER = O.ORDERNUMBER
+CROSS JOIN TOTPROFITTABLE T
+GROUP BY O.CUSTOMERNUMBER,
+         T.TOTALPROFIT
+ORDER BY PROFITPERCUSTOMER DESC;
+
+---
+-- 76: Which payments in any month and year are more than twice the average for that month and year (i.e. compare all payments in Oct 2004 with the average payment for Oct 2004)? Order the results by the date of the payment. You will need to use the date functions.
+WITH AVGPAYMENTSTABLE AS
+(
+  SELECT TO_CHAR(PAYMENTDATE,'YYYY-MM') AS YEARMONTH,
+         AVG(AMOUNT) AS AVGPAYMENTPERMONTH
+  FROM PAYMENTS
+  GROUP BY TO_CHAR(PAYMENTDATE,'YYYY-MM')
+  ORDER BY YEARMONTH
+)
+SELECT CHECKNUMBER,
+       AV.YEARMONTH
+FROM PAYMENTS P
+JOIN AVGPAYMENTSTABLE AV ON TO_CHAR (P.PAYMENTDATE,'YYYY-MM') = AV.YEARMONTH
+WHERE AMOUNT > 2*AV.AVGPAYMENTPERMONTH
+ORDER BY AV.YEARMONTH;
+
+---
+-- 77: Report for each product, the percentage value of its stock on hand as a percentage of the stock on hand for product line to which it belongs. Order the report by product line and percentage value within product line descending. Show percentages with two decimal places.
+WITH TOTALVALUE
+AS
+(SELECT SUM(QUANTITYINSTOCK*BUYPRICE) AS TOTVALUE
+FROM PRODUCTS),
+PERCENTAGEVALUEPERPRODUCTLINE AS
+(SELECT P.PRODUCTLINE, SUM(P.QUANTITYINSTOCK*P.BUYPRICE) AS TOTVALUPERPRODUCTLINE,SUM(P.QUANTITYINSTOCK*P.BUYPRICE) / T.TOTVALUE AS TOTALQUANTITYPERCENTAGEPERLINE
+FROM PRODUCTS P
+CROSS JOIN TOTALVALUE T
+GROUP BY P.PRODUCTLINE,
+         T.TOTVALUE)
+SELECT P.PRODUCTCODE,
+       P.PRODUCTNAME,
+       P.PRODUCTLINE,
+       ROUND(P.QUANTITYINSTOCK*P.BUYPRICE*100.0 / PLL.TOTVALUPERPRODUCTLINE,2) AS PERCENTAGEPERPRODUCTLINE
+FROM PRODUCTS P
+JOIN PERCENTAGEVALUEPERPRODUCTLINE PLL ON P.PRODUCTLINE = PLL.PRODUCTLINE
+ORDER BY P.PRODUCTLINE,
+         PERCENTAGEPERPRODUCTLINE DESC;
+
+---
+-- 78: For orders containing more than two products, report those products that constitute more than 50% of the value of the order.
+WITH REQUIREDORDERS
+AS
+(SELECT ORDERNUMBER,
+       SUM(QUANTITYORDERED*PRICEEACH) AS VALUEOFORDER
+FROM ORDERDETAILS OD
+GROUP BY ORDERNUMBER
+HAVING COUNT(*) > 2),
+EACHPRODUCTANDORDERVALUE AS
+(SELECT OD.ORDERNUMBER,
+        OD.PRODUCTCODE,
+        SUM(OD.QUANTITYORDERED*OD.PRICEEACH) AS ORDERPRODUCTVALUE
+FROM REQUIREDORDERS RO
+JOIN ORDERDETAILS OD ON RO.ORDERNUMBER = OD.ORDERNUMBER
+GROUP BY OD.ORDERNUMBER,
+         OD.PRODUCTCODE)
+SELECT EV.ORDERNUMBER, EV.PRODUCTCODE
+FROM EACHPRODUCTANDORDERVALUE EV
+JOIN REQUIREDORDERS RO ON EV.ORDERNUMBER = RO.ORDERNUMBER
+WHERE ORDERPRODUCTVALUE >= 0.5*VALUEOFORDER;
